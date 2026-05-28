@@ -1,0 +1,242 @@
+<script>
+(() => {
+  if (window.__ipkIIMotionBootstrap) return;
+  window.__ipkIIMotionBootstrap = true;
+
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+  const q = (sel, root = document) => root.querySelector(sel);
+  const qa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  function installIIMotion() {
+    if (window.__ipkIIMotionInstalled) return;
+    if (!q(".ipk-nav") || !q("#read-progress")) {
+      window.setTimeout(installIIMotion, 180);
+      return;
+    }
+    window.__ipkIIMotionInstalled = true;
+
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const finePointer = window.matchMedia &&
+      window.matchMedia("(pointer: fine)").matches;
+
+    function updateNavState() {
+      const nav = q(".ipk-nav");
+      if (nav) nav.classList.toggle("is-pinned", window.scrollY > 12);
+
+      const links = qa(".ipk-nav-links a[href^='#']");
+      if (!links.length) return;
+
+      let active = links[0];
+      for (const link of links) {
+        const target = q(link.getAttribute("href"));
+        if (!target) continue;
+        const y = target.getBoundingClientRect().top + window.scrollY;
+        if (y - 150 <= window.scrollY) active = link;
+      }
+      links.forEach((link) => link.classList.toggle("is-active", link === active));
+    }
+
+    window.addEventListener("scroll", updateNavState, { passive: true });
+    window.addEventListener("resize", updateNavState, { passive: true });
+    window.setTimeout(updateNavState, 60);
+    window.setTimeout(updateNavState, 600);
+
+    document.addEventListener("click", (event) => {
+      if (
+        event.target.closest &&
+        event.target.closest(".modebar, .modebar-btn, .js-plotly-plot, .plotly, .plot-container")
+      ) {
+        return;
+      }
+      const target = event.target.closest &&
+        event.target.closest(".ipk-law-badge, .ipk-nav-links a, .ipk-hero-chain span");
+      if (!target || reduceMotion) return;
+
+      const rect = target.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 1.8;
+      const ripple = document.createElement("span");
+      ripple.className = "ipk-ripple-wave";
+      ripple.style.width = size + "px";
+      ripple.style.height = size + "px";
+      ripple.style.left = event.clientX - rect.left - size / 2 + "px";
+      ripple.style.top = event.clientY - rect.top - size / 2 + "px";
+      target.appendChild(ripple);
+      ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+    }, { passive: true });
+
+    let tiltCard = null;
+    let tiltRect = null;
+    let tiltEvent = null;
+    let tiltRaf = 0;
+
+    function applyCardTilt() {
+      tiltRaf = 0;
+      if (!tiltCard || !tiltRect || !tiltEvent) return;
+      const px = clamp(((tiltEvent.clientX - tiltRect.left) / tiltRect.width) * 100, 0, 100);
+      const py = clamp(((tiltEvent.clientY - tiltRect.top) / tiltRect.height) * 100, 0, 100);
+      const dx = ((tiltEvent.clientX - tiltRect.left) / tiltRect.width - 0.5) * 2;
+      const dy = ((tiltEvent.clientY - tiltRect.top) / tiltRect.height - 0.5) * 2;
+      tiltCard.style.setProperty("--spot-x", px.toFixed(1) + "%");
+      tiltCard.style.setProperty("--spot-y", py.toFixed(1) + "%");
+      tiltCard.style.transform =
+        "translateY(-4px) rotateY(" + (dx * 3.5).toFixed(2) +
+        "deg) rotateX(" + (-dy * 2.5).toFixed(2) + "deg)";
+    }
+
+    document.addEventListener("mousemove", (event) => {
+      if (reduceMotion || !finePointer) return;
+      const card = event.target.closest &&
+        event.target.closest(".ipk-monograph-tile, .ipk-formula-card, .ipk-kill-card");
+      if (!card) return;
+      if (card !== tiltCard) {
+        tiltCard = card;
+        tiltRect = card.getBoundingClientRect();
+      }
+      tiltEvent = event;
+      if (!tiltRaf) tiltRaf = window.requestAnimationFrame(applyCardTilt);
+    }, { passive: true });
+
+    document.addEventListener("mouseout", (event) => {
+      const card = event.target.closest &&
+        event.target.closest(".ipk-monograph-tile, .ipk-formula-card, .ipk-kill-card");
+      if (!card) return;
+      if (event.relatedTarget && card.contains(event.relatedTarget)) return;
+      card.style.transform = "";
+      card.style.setProperty("--spot-x", "50%");
+      card.style.setProperty("--spot-y", "50%");
+      if (card === tiltCard) {
+        tiltCard = null;
+        tiltRect = null;
+        tiltEvent = null;
+      }
+    }, { passive: true });
+
+    if (!reduceMotion && finePointer) {
+      let mx = -300;
+      let my = -300;
+      let cx = -300;
+      let cy = -300;
+      let state = "";
+      let rafId = 0;
+      let cursorRunning = false;
+      let idleFrames = 0;
+
+      function cursorDot() {
+        return q("#cursor-dot");
+      }
+
+      function detectState(el) {
+        if (!el || !el.closest) return "";
+        if (el.closest("button, [role='button'], .ipk-law-badge, .ipk-hero-chain span")) return "btn";
+        if (el.closest("input, textarea, select, marimo-text")) return "text";
+        if (el.closest("a[href], .ipk-monograph-tile, .ipk-formula-card, .ipk-kill-card, .js-plotly-plot")) return "link";
+        if (el.closest("p, li, h1, h2, h3, h4")) return "text";
+        return "";
+      }
+
+      function applyState(next) {
+        const dot = cursorDot();
+        if (!dot || next === state) return;
+        state = next;
+        dot.classList.remove("s-link", "s-btn", "s-text", "s-down");
+        if (next) dot.classList.add("s-" + next);
+      }
+
+      function tick() {
+        if (!cursorRunning || document.hidden) {
+          cursorRunning = false;
+          rafId = 0;
+          return;
+        }
+        const dot = cursorDot();
+        if (dot) {
+          cx += (mx - cx) * 0.48;
+          cy += (my - cy) * 0.48;
+          const dx = mx - cx;
+          const dy = my - cy;
+          const speed = Math.hypot(dx, dy);
+          idleFrames = speed < 0.08 ? idleFrames + 1 : 0;
+          const sx = 1 + Math.min(speed * 0.003, 0.06);
+          const sy = 1 - Math.min(speed * 0.0015, 0.03);
+          const angle = speed > 0.2 ? Math.atan2(dy, dx) * 57.2958 : 0;
+          dot.style.opacity = ".9";
+          dot.style.transform =
+            "translate(" + cx + "px," + cy + "px) translate(-50%,-50%) rotate(" +
+            angle + "deg) scale(" + sx + "," + sy + ")";
+        }
+        if (idleFrames > 16) {
+          cursorRunning = false;
+          rafId = 0;
+          return;
+        }
+        rafId = window.requestAnimationFrame(tick);
+      }
+
+      function startCursorLoop() {
+        if (cursorRunning) return;
+        cursorRunning = true;
+        rafId = window.requestAnimationFrame(tick);
+      }
+
+      function stopCursorLoop() {
+        cursorRunning = false;
+        if (rafId) {
+          window.cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+      }
+
+      function spawnCursorRipple(x, y) {
+        const ripple = document.createElement("div");
+        ripple.className = "cursor-ripple";
+        ripple.style.left = x + "px";
+        ripple.style.top = y + "px";
+        document.body.appendChild(ripple);
+        window.setTimeout(() => ripple.remove(), 700);
+      }
+
+      document.addEventListener("mousemove", (event) => {
+        mx = event.clientX;
+        my = event.clientY;
+        idleFrames = 0;
+        applyState(detectState(event.target));
+        startCursorLoop();
+      }, { passive: true });
+
+      document.addEventListener("mousedown", (event) => {
+        if (
+          event.target.closest &&
+          event.target.closest(".modebar, .modebar-btn, .js-plotly-plot, .plotly, .plot-container")
+        ) {
+          return;
+        }
+        const dot = cursorDot();
+        if (dot) dot.classList.add("s-down");
+        spawnCursorRipple(event.clientX, event.clientY);
+      }, { passive: true });
+
+      document.addEventListener("mouseup", () => {
+        const dot = cursorDot();
+        if (dot) dot.classList.remove("s-down");
+      }, { passive: true });
+
+      document.addEventListener("mouseleave", () => {
+        const dot = cursorDot();
+        if (dot) dot.style.opacity = "0";
+        stopCursorLoop();
+      }, { passive: true });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) stopCursorLoop();
+      }, { passive: true });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", installIIMotion, { once: true });
+  } else {
+    installIIMotion();
+  }
+})();
+</script>

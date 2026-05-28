@@ -1,0 +1,5 @@
+marimo[recommended]==0.23.8
+networkx==3.6.1
+numpy==2.4.6
+pandas==3.0.3
+plotly==6.7.0

@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  intelligent-physics-kernel:
+    build: .
+    ports:
+      - "127.0.0.1:2718:2718"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped

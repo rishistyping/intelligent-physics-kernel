@@ -1,0 +1,21 @@
+"""
+Sample JupyterHub configuration for the Intelligent Physics Kernel marimo app.
+
+Copy the relevant settings into the real JupyterHub `jupyterhub_config.py`.
+The marimo executable should come from the same environment that can import the
+project dependencies used by app.py.
+"""
+
+from pathlib import Path
+
+
+PROJECT_ROOT = Path("/srv/intelligent-physics-kernel")
+
+# Explicit marimo path for marimo-jupyter-extension.
+c.MarimoProxyConfig.marimo_path = str(PROJECT_ROOT / ".venv/bin/marimo")  # noqa: F821
+
+# The notebook is large and visualization-heavy; allow a little more startup time.
+c.MarimoProxyConfig.timeout = 120  # noqa: F821
+
+# Optional: keep the project root as the working directory for launched sessions.
+c.Spawner.default_url = "/lab"  # noqa: F821

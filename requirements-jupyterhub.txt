@@ -1,0 +1,10 @@
+# JupyterHub / JupyterLab host integration for opening marimo from Jupyter.
+# Single-environment install: this includes the project app requirements and
+# the Jupyter host integration. For split JupyterHub deployments, install
+# requirements.txt in the user env and the Jupyter packages below in the hub env.
+-r requirements.txt
+
+jupyterhub
+jupyterlab
+marimo[sandbox]>=0.23.4
+marimo-jupyter-extension
