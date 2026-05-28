@@ -6,8 +6,79 @@
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
   const q = (sel, root = document) => root.querySelector(sel);
   const qa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const staticChromePhrases = [
+    "static notebook",
+    "not connected to a kernel",
+    "made with marimo",
+  ];
+
+  function compactText(el) {
+    return ((el && (el.innerText || el.textContent)) || "").replace(/\s+/g, " ").trim();
+  }
+
+  function looksLikeStaticChrome(el) {
+    if (!el || el.nodeType !== 1 || (el.dataset && el.dataset.ipkKeep)) return false;
+    const text = compactText(el).toLowerCase();
+    if (!text) return false;
+    const matched = staticChromePhrases.some((phrase) => text.includes(phrase));
+    if (!matched) return false;
+    if (text.includes("made with marimo")) return text.length <= 90;
+    return text.length <= 360;
+  }
+
+  function removableChromeBox(el) {
+    let box = el;
+    for (let i = 0; i < 4 && box.parentElement; i += 1) {
+      const parentText = compactText(box.parentElement).toLowerCase();
+      const parentMatches = staticChromePhrases.some((phrase) => parentText.includes(phrase));
+      const parentSmallEnough = parentText.includes("made with marimo")
+        ? parentText.length <= 110
+        : parentText.length <= 420;
+      if (!parentMatches || !parentSmallEnough) break;
+      box = box.parentElement;
+    }
+    return box;
+  }
+
+  function ipkHideStaticNotebookChrome() {
+    const selectors = [
+      "marimo-static-notebook-banner",
+      "[role='alert']",
+      "[role='status']",
+      "[data-testid*='static' i]",
+      "[data-testid*='banner' i]",
+      "[class*='static-notebook' i]",
+      "[class*='notebook-banner' i]",
+      "[class*='toast' i]",
+      "[class*='badge' i]",
+      "footer",
+      "aside",
+      "a",
+      "button",
+      "div",
+    ].join(",");
+    qa(selectors).forEach((el) => {
+      if (!looksLikeStaticChrome(el)) return;
+      const box = removableChromeBox(el);
+      if (box && box.parentElement) box.remove();
+    });
+  }
+
+  function scheduleStaticChromeCleanup() {
+    ipkHideStaticNotebookChrome();
+    [120, 450, 1000, 2200, 4200].forEach((delay) => {
+      window.setTimeout(ipkHideStaticNotebookChrome, delay);
+    });
+    if (window.__ipkStaticChromeObserver) return;
+    window.__ipkStaticChromeObserver = new MutationObserver(() => ipkHideStaticNotebookChrome());
+    window.__ipkStaticChromeObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
+  }
 
   function installIIMotion() {
+    scheduleStaticChromeCleanup();
     if (window.__ipkIIMotionInstalled) return;
     if (!q(".ipk-nav") || !q("#read-progress")) {
       window.setTimeout(installIIMotion, 180);
@@ -234,8 +305,12 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", installIIMotion, { once: true });
+    document.addEventListener("DOMContentLoaded", () => {
+      scheduleStaticChromeCleanup();
+      installIIMotion();
+    }, { once: true });
   } else {
+    scheduleStaticChromeCleanup();
     installIIMotion();
   }
 })();

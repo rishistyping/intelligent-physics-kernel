@@ -212,6 +212,7 @@ def _check_html_head_artifact() -> list[CheckResult]:
     ]
     marker_groups = {
         "II motion/runtime": ("__ipkIIMotionBootstrap", "__ipkIIMotionInstalled"),
+        "static chrome cleanup": ("ipkHideStaticNotebookChrome", "staticChromePhrases"),
         "cursor": ("#cursor-dot", "cursorDot", "cursor-ripple"),
         "progress": ("#read-progress", "read-progress"),
         "ripple": ("ipk-ripple-wave", "cursor-ripple"),
@@ -350,6 +351,8 @@ def _check_static_html(path: Path, name: str, require_nojekyll: bool = False) ->
         "Derivation Trees Explorer",
         "ipk-forest-panel",
         "__ipkIIMotionBootstrap",
+        "ipkHideStaticNotebookChrome",
+        "ipk-copy-sheet",
         "Vocabulary lawful",
         "Falsification Kill List",
     )

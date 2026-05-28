@@ -3293,6 +3293,23 @@ with app.setup:
     def provenance_csv(status_filter: str) -> str:
         return create_provenance_dataframe(status_filter).to_csv(index=False)
 
+    def create_provenance_copy_preview(markdown_text: str, status_filter: str) -> mo.Html:
+        lines = markdown_text.splitlines()
+        preview = "\n".join(lines[:52])
+        if len(lines) > 52:
+            preview += f"\n\n... {len(lines) - 52} more lines in the Markdown download."
+        return mo.Html(f"""
+        <details class="ipk-copy-sheet t-panel-slide t-resize" data-open="true">
+            <summary>
+                <span>
+                    <strong>Copy sheet preview</strong>
+                    <small>Filter: {escape(status_filter)} · full Markdown is in the download</small>
+                </span>
+            </summary>
+            <pre>{escape(preview)}</pre>
+        </details>
+        """)
+
     def create_provenance_summary(status_filter: str) -> mo.Html:
         df = create_provenance_dataframe(status_filter)
         counts = df["Status"].value_counts().to_dict() if not df.empty else {}
@@ -4538,6 +4555,78 @@ def _():
         padding: 0.75rem 0.9rem;
         border-radius: 6px;
     }}
+    .ipk-copy-sheet {{
+        border: 1px solid rgba(242,238,226,.16);
+        border-radius: 8px;
+        background:
+            linear-gradient(180deg, rgba(242,238,226,.095), rgba(242,238,226,.045));
+        box-shadow: 0 24px 70px -54px rgba(0,0,0,.84);
+        color: var(--inverse);
+        margin: 0.85rem 0;
+        overflow: hidden;
+    }}
+    .ipk-copy-sheet summary {{
+        align-items: center;
+        cursor: pointer;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        list-style: none;
+        padding: 0.95rem 1rem;
+        user-select: none;
+    }}
+    .ipk-copy-sheet summary::-webkit-details-marker {{
+        display: none;
+    }}
+    .ipk-copy-sheet summary span {{
+        display: grid;
+        gap: 0.18rem;
+    }}
+    .ipk-copy-sheet summary strong {{
+        color: var(--inverse);
+        font-family: var(--serif-display);
+        font-size: 1.1rem;
+        font-weight: 400;
+    }}
+    .ipk-copy-sheet summary small {{
+        color: rgba(242,238,226,.62);
+        font-family: var(--sans);
+        font-size: 0.78rem;
+    }}
+    .ipk-copy-sheet summary::after {{
+        border: 1px solid rgba(190,230,237,.28);
+        border-radius: 999px;
+        color: var(--sky);
+        content: "Open preview";
+        flex: 0 0 auto;
+        font-family: var(--sans);
+        font-size: 0.74rem;
+        padding: 0.2rem 0.58rem;
+        transition: background 180ms var(--ii-ease), color 180ms var(--ii-ease), transform 180ms var(--ii-ease);
+    }}
+    .ipk-copy-sheet[open] summary::after {{
+        background: rgba(190,230,237,.12);
+        color: var(--inverse);
+        content: "Hide preview";
+    }}
+    .ipk-copy-sheet summary:hover::after {{
+        transform: translateY(-1px);
+    }}
+    .ipk-copy-sheet pre {{
+        background: rgba(5, 14, 27, 0.72) !important;
+        border-top: 1px solid rgba(242,238,226,.12) !important;
+        border-radius: 0 !important;
+        color: rgba(242,238,226,.82) !important;
+        font-size: 0.78rem;
+        line-height: 1.48;
+        margin: 0 !important;
+        max-height: min(28rem, 52vh);
+        max-width: 100%;
+        overflow: auto;
+        padding: 1rem !important;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }}
     .ipk-monograph-note,
     :where(.ipk-monograph-shell, .output.block:has(.ipk-monograph-shell-marker)) .ipk-advanced-note {{
         background: linear-gradient(135deg, rgba(7, 20, 38, 0.78), rgba(20, 39, 65, 0.70)) !important;
@@ -5666,8 +5755,7 @@ def _(
                     label="Download Markdown",
                 ),
             ], justify="start", gap=1),
-            mo.md("#### Copy Sheet"),
-            mo.plain_text(_prov_markdown),
+            create_provenance_copy_preview(_prov_markdown, provenance_status_filter.value),
             _monograph_note(
                 "This module is the exportable citation layer for the atlas. Use the table download for spreadsheets, or the Markdown download when drafting notes with LaTeX and PDF page references.",
                 kind="success",
