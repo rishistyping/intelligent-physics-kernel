@@ -16,8 +16,31 @@
     return ((el && (el.innerText || el.textContent)) || "").replace(/\s+/g, " ").trim();
   }
 
+  function protectedChromeNode(el) {
+    if (!el || el.nodeType !== 1) return true;
+    const tag = (el.tagName || "").toLowerCase();
+    if (["html", "head", "body", "main"].includes(tag)) return true;
+    if (["root", "App"].includes(el.id || "")) return true;
+    if (!el.matches) return false;
+    return el.matches([
+      ".marimo",
+      ".marimo-app",
+      ".mo-notebook",
+      ".notebook",
+      ".contents",
+      "[data-testid='notebook']",
+      "[data-testid='notebook-content']",
+      "[data-testid='cell-output']",
+      ".output-area",
+      ".output.block",
+      "marimo-output",
+    ].join(","));
+  }
+
   function looksLikeStaticChrome(el) {
     if (!el || el.nodeType !== 1 || (el.dataset && el.dataset.ipkKeep)) return false;
+    if (el.dataset && el.dataset.ipkStaticChromeHidden) return false;
+    if (protectedChromeNode(el)) return false;
     const text = compactText(el).toLowerCase();
     if (!text) return false;
     const matched = staticChromePhrases.some((phrase) => text.includes(phrase));
@@ -27,15 +50,28 @@
   }
 
   function removableChromeBox(el) {
+    const originalText = compactText(el).toLowerCase();
+    if (originalText.includes("made with marimo")) {
+      const badge = el.closest([
+        "[class*='fixed' i][class*='bottom-0' i]",
+        "[class*='fixed' i][class*='right-0' i]",
+        "footer",
+        "aside",
+      ].join(","));
+      return badge && !protectedChromeNode(badge) ? badge : el;
+    }
+
     let box = el;
     for (let i = 0; i < 4 && box.parentElement; i += 1) {
-      const parentText = compactText(box.parentElement).toLowerCase();
+      const parent = box.parentElement;
+      if (protectedChromeNode(parent)) break;
+      const parentText = compactText(parent).toLowerCase();
       const parentMatches = staticChromePhrases.some((phrase) => parentText.includes(phrase));
       const parentSmallEnough = parentText.includes("made with marimo")
         ? parentText.length <= 110
         : parentText.length <= 420;
       if (!parentMatches || !parentSmallEnough) break;
-      box = box.parentElement;
+      box = parent;
     }
     return box;
   }
@@ -51,16 +87,25 @@
       "[class*='notebook-banner' i]",
       "[class*='toast' i]",
       "[class*='badge' i]",
+      "[class*='fixed' i][class*='bottom-0' i]",
+      "[class*='fixed' i][class*='top-0' i]",
+      "[class*='fixed' i][class*='right-0' i]",
+      "[class*='banner' i]",
+      "[class*='static' i]",
       "footer",
       "aside",
       "a",
       "button",
-      "div",
     ].join(",");
     qa(selectors).forEach((el) => {
       if (!looksLikeStaticChrome(el)) return;
       const box = removableChromeBox(el);
-      if (box && box.parentElement) box.remove();
+      if (box && box.parentElement && !protectedChromeNode(box)) {
+        box.dataset.ipkStaticChromeHidden = "true";
+        box.setAttribute("aria-hidden", "true");
+        box.style.setProperty("display", "none", "important");
+        box.style.setProperty("visibility", "hidden", "important");
+      }
     });
   }
 
