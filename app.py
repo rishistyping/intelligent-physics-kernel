@@ -230,57 +230,72 @@ with app.setup:
     # DEPENDENCY FLOWCHART (networkx + Plotly)
     # =============================================================================
 
-    def create_dependency_flowchart() -> go.Figure:
-        G = nx.DiGraph()
-        for i, name in enumerate(DEPENDENCY_CHAIN):
-            G.add_node(name, pos=(i, 0))
-        for i in range(len(DEPENDENCY_CHAIN) - 1):
-            G.add_edge(DEPENDENCY_CHAIN[i], DEPENDENCY_CHAIN[i+1])
+    def create_dependency_flowchart() -> mo.Html:
+        stages = [{
+            "step": "Origin",
+            "node": "MU",
+            "lock": "Minimum Update",
+            "branch": "Epistemic seed",
+            "survives": MU_PRINCIPLE,
+            "eliminated": "Anything added without constraint",
+            "color": WARM_GOLD,
+        }]
+        for lock in LOCKS_DATA:
+            stages.append({
+                "step": f"Lock {lock['id']}",
+                "node": DEPENDENCY_CHAIN[lock["id"]],
+                "lock": lock["lock"],
+                "branch": lock["branch"],
+                "survives": lock["survives"],
+                "eliminated": lock["eliminated"],
+                "color": BRANCH_COLORS.get(lock["branch"], ELECTRIC_CYAN),
+            })
+        stages.append({
+            "step": "Fixed point",
+            "node": "Standard Model",
+            "lock": "Gauge algebra",
+            "branch": "Particle Physics",
+            "survives": "su(3) + su(2) + u(1)",
+            "eliminated": "All arbitrary presentations",
+            "color": WARM_GOLD,
+        })
 
-        pos = {name: (i, 0) for i, name in enumerate(DEPENDENCY_CHAIN)}
-    
-        edge_x, edge_y = [], []
-        for edge in G.edges():
-            x0, y0 = pos[edge[0]]
-            x1, y1 = pos[edge[1]]
-            edge_x.extend([x0, x1, None])
-            edge_y.extend([y0, y1, None])
+        cards = []
+        for idx, stage in enumerate(stages):
+            connector = "" if idx == len(stages) - 1 else '<span class="ipk-cascade-arrow" aria-hidden="true"></span>'
+            cards.append(f"""
+            <article class="ipk-cascade-card t-panel-slide t-resize" data-open="true" style="--stage-color:{escape(stage['color'])}">
+                <div class="ipk-cascade-step">{escape(stage['step'])}</div>
+                <h3>{escape(stage['node'])}</h3>
+                <p class="ipk-cascade-lock">{escape(stage['lock'])}</p>
+                <div class="ipk-cascade-branch">{escape(stage['branch'])}</div>
+                <dl>
+                    <dt>Survives</dt>
+                    <dd>{escape(stage['survives'])}</dd>
+                    <dt>Eliminates</dt>
+                    <dd>{escape(stage['eliminated'])}</dd>
+                </dl>
+                {connector}
+            </article>
+            """)
 
-        node_x = [pos[n][0] for n in G.nodes()]
-        node_y = [pos[n][1] for n in G.nodes()]
-        node_text = list(G.nodes())
-
-        fig = go.Figure()
-        # Edges
-        fig.add_trace(go.Scatter(
-            x=edge_x, y=edge_y,
-            mode='lines',
-            line=dict(color=ELECTRIC_CYAN, width=1.8),
-            hoverinfo='none',
-            showlegend=False
-        ))
-        # Nodes
-        colors = [WARM_GOLD if n in ("MU", "Standard Model") else ELECTRIC_CYAN for n in G.nodes()]
-        fig.add_trace(go.Scatter(
-            x=node_x, y=node_y,
-            mode='markers+text',
-            marker=dict(size=28, color=colors, line=dict(width=2, color=WHITE)),
-            text=node_text,
-            textposition="top center",
-            textfont=dict(color=WHITE, size=11),
-            hovertemplate="%{text}<br>Click to explore<extra></extra>",
-            showlegend=False
-        ))
-        fig.update_layout(
-            height=220,
-            margin=dict(l=10, r=10, t=10, b=30),
-            paper_bgcolor=DEEP_NAVY,
-            plot_bgcolor=DEEP_NAVY,
-            xaxis=dict(visible=False, range=[-0.5, len(DEPENDENCY_CHAIN)-0.5]),
-            yaxis=dict(visible=False, range=[-1, 1]),
-            hovermode="closest",
-        )
-        return fig
+        return mo.Html(f"""
+        <section class="ipk-lock-cascade" aria-label="MU to Standard Model dependency cascade">
+            <div class="ipk-cascade-halo" aria-hidden="true"></div>
+            <div class="ipk-cascade-intro">
+                <div>
+                    <div class="ipk-panel-kicker">Page 4 dependency chain</div>
+                    <h3>Ten locks as a constraint cascade</h3>
+                </div>
+                <div class="ipk-cascade-meter">
+                    <span>MU</span><span>Probability</span><span>D=4</span><span>E8</span><span>Spin(10)</span><span>SM</span>
+                </div>
+            </div>
+            <div class="ipk-cascade-track reveal-stagger" role="list">
+                {"".join(cards)}
+            </div>
+        </section>
+        """)
 
     # =============================================================================
     # E₈ 3D VIEWER — The star of the show
@@ -3460,6 +3475,14 @@ def _():
         --r-full: 9999px;
         --ii-shadow: 0 20px 50px -32px rgba(15,35,63,.30);
         --ii-ease: cubic-bezier(.2,.7,.2,1);
+        --ease-out-cubic: cubic-bezier(.33, 1, .68, 1);
+        --ease-in-out-cubic: cubic-bezier(.65, 0, .35, 1);
+        --ease-soft-out: cubic-bezier(.2, .7, .2, 1);
+        --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+        --dur-instant: 120ms;
+        --dur-quick: 200ms;
+        --dur-base: 280ms;
+        --dur-slow: 420ms;
 
         /* transitions-dev — copy this :root block into your project once.
            Every transition snippet reads from these semantic names. */
@@ -3570,6 +3593,26 @@ def _():
         font-family: var(--serif-display);
         font-weight: 400;
         letter-spacing: 0;
+    }}
+    h1 em, h2 em, h3 em, h4 em,
+    .ipk-cascade-intro h3,
+    .ipk-section-header h2 em {{
+        background: linear-gradient(90deg, var(--accent) 0%, var(--gold) 42%, var(--accent) 70%, var(--accent) 100%);
+        background-size: 260% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        animation: ipk-shimmer-sweep 4.2s linear infinite;
+    }}
+    @supports (-webkit-text-fill-color: transparent) {{
+        h1 em, h2 em, h3 em, h4 em,
+        .ipk-cascade-intro h3,
+        .ipk-section-header h2 em {{
+            -webkit-text-fill-color: transparent;
+        }}
+    }}
+    @keyframes ipk-shimmer-sweep {{
+        from {{ background-position: 240% center; }}
+        to {{ background-position: -80% center; }}
     }}
     p, li {{
         font-family: var(--serif-body);
@@ -3728,6 +3771,46 @@ def _():
         height var(--resize-dur) var(--resize-ease);
       will-change: width, height;
     }}
+    .reveal[data-ipk-reveal-bound="true"]:not(.in) {{
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+            opacity .9s var(--ease-soft-out),
+            transform .9s var(--ease-soft-out),
+            filter .9s var(--ease-soft-out);
+        will-change: opacity, transform, filter;
+    }}
+    .reveal.in {{
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }}
+    .reveal-stagger[data-ipk-reveal-bound="true"]:not(.in) > * {{
+        opacity: 0;
+        transform: translateY(14px);
+        transition:
+            opacity .7s var(--ease-soft-out),
+            transform .7s var(--ease-soft-out),
+            filter .7s var(--ease-soft-out);
+    }}
+    .reveal-stagger.in > *,
+    .reveal-stagger .reveal.in {{
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }}
+    .reveal-stagger.in > *:nth-child(1) {{ transition-delay: .05s; }}
+    .reveal-stagger.in > *:nth-child(2) {{ transition-delay: .16s; }}
+    .reveal-stagger.in > *:nth-child(3) {{ transition-delay: .27s; }}
+    .reveal-stagger.in > *:nth-child(4) {{ transition-delay: .38s; }}
+    .reveal-stagger.in > *:nth-child(5) {{ transition-delay: .49s; }}
+    .reveal-stagger.in > *:nth-child(6) {{ transition-delay: .60s; }}
+    .reveal-stagger.in > *:nth-child(7) {{ transition-delay: .71s; }}
+    .reveal-stagger.in > *:nth-child(8) {{ transition-delay: .82s; }}
+    .reveal-stagger.in > *:nth-child(9) {{ transition-delay: .93s; }}
+    .reveal-stagger.in > *:nth-child(10) {{ transition-delay: 1.04s; }}
+    .reveal-stagger.in > *:nth-child(11) {{ transition-delay: 1.15s; }}
+    .reveal-stagger.in > *:nth-child(12) {{ transition-delay: 1.26s; }}
     #read-progress {{
         position: fixed;
         top: 0;
@@ -3738,10 +3821,9 @@ def _():
         pointer-events: none;
         transform-origin: left;
         transform: scaleX(0);
-        animation: ipk-scroll-progress linear both;
-        animation-timeline: scroll(root);
         background: linear-gradient(90deg, var(--accent), var(--gold), var(--accent));
         background-size: 200% 100%;
+        transition: transform 120ms linear;
     }}
     #read-progress::after {{
         content: "";
@@ -4360,6 +4442,237 @@ def _():
         display: block;
         color: var(--primary);
         margin-bottom: 0.2rem;
+    }}
+    .ipk-lock-cascade {{
+        background:
+            radial-gradient(circle at 12% 12%, rgba(47,149,166,.20), transparent 24rem),
+            radial-gradient(circle at 85% 8%, rgba(201,169,110,.22), transparent 25rem),
+            linear-gradient(135deg, rgba(15,35,63,.98), rgba(7,20,38,.96));
+        border: 1px solid rgba(15,35,63,.18);
+        border-radius: 8px;
+        box-shadow: 0 30px 90px -60px rgba(15,35,63,.68);
+        color: var(--inverse);
+        margin: 1rem 0 1.35rem;
+        overflow: hidden;
+        padding: clamp(1rem, 2vw, 1.4rem);
+        position: relative;
+        isolation: isolate;
+    }}
+    .ipk-lock-cascade::before {{
+        content: "";
+        position: absolute;
+        inset: -18%;
+        background:
+            radial-gradient(620px 360px at 76% 16%, rgba(131,161,204,.16), transparent 68%),
+            radial-gradient(500px 320px at 13% 82%, rgba(47,149,166,.13), transparent 70%),
+            radial-gradient(420px 280px at 56% 44%, rgba(201,169,110,.10), transparent 70%);
+        opacity: .78;
+        pointer-events: none;
+        z-index: 0;
+        animation: ipk-cascade-aurora 28s ease-in-out infinite;
+    }}
+    @keyframes ipk-cascade-aurora {{
+        0%, 100% {{ transform: translate(0, 0) scale(1); opacity: .72; }}
+        32% {{ transform: translate(-2%, 2%) scale(1.07); opacity: .94; }}
+        66% {{ transform: translate(2%, -2%) scale(.96); opacity: .58; }}
+    }}
+    .ipk-cascade-halo {{
+        background:
+            linear-gradient(90deg, transparent, rgba(190,230,237,.26), rgba(201,169,110,.24), transparent);
+        height: 1px;
+        left: 1rem;
+        opacity: .8;
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1;
+    }}
+    .ipk-lock-cascade.in .ipk-cascade-halo {{
+        animation: ipk-cascade-line-bloom 1.3s var(--ease-soft-out) both;
+    }}
+    @keyframes ipk-cascade-line-bloom {{
+        from {{ clip-path: inset(0 100% 0 0); opacity: 0; }}
+        to {{ clip-path: inset(0 0 0 0); opacity: .8; }}
+    }}
+    .ipk-cascade-intro {{
+        align-items: end;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-bottom: 0.9rem;
+        position: relative;
+        z-index: 1;
+    }}
+    .ipk-cascade-intro h3 {{
+        color: var(--inverse);
+        font-size: clamp(1.45rem, 2.4vw, 2.25rem);
+        line-height: 1;
+        margin: 0.15rem 0 0;
+    }}
+    .ipk-cascade-meter {{
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        justify-content: flex-end;
+        max-width: 44rem;
+    }}
+    .ipk-cascade-meter span {{
+        border: 1px solid rgba(190,230,237,.24);
+        border-radius: 999px;
+        color: rgba(242,238,226,.78);
+        font-family: var(--sans);
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        padding: 0.18rem 0.48rem;
+        text-transform: uppercase;
+    }}
+    .ipk-cascade-track {{
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding: 0.1rem 0.15rem 0.9rem;
+        position: relative;
+        scroll-snap-type: x proximity;
+        scrollbar-color: rgba(190,230,237,.42) rgba(242,238,226,.08);
+        z-index: 1;
+    }}
+    .ipk-cascade-card {{
+        background:
+            linear-gradient(180deg, rgba(242,238,226,.13), rgba(242,238,226,.06)),
+            radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--stage-color) 28%, transparent), transparent 62%);
+        border: 1px solid color-mix(in srgb, var(--stage-color) 44%, rgba(242,238,226,.16));
+        border-radius: 8px;
+        box-shadow: 0 24px 68px -48px rgba(0,0,0,.88);
+        flex: 0 0 clamp(15.5rem, 23vw, 20rem);
+        min-height: 18rem;
+        padding: 0.95rem;
+        position: relative;
+        scroll-snap-align: start;
+        overflow: hidden;
+        --spot-x: 50%;
+        --spot-y: 50%;
+        transition: border-color 280ms var(--ease-soft-out), box-shadow 320ms var(--ease-soft-out), transform 320ms var(--ease-soft-out), background 320ms var(--ease-soft-out);
+        transform-origin: center;
+        z-index: 1;
+    }}
+    .ipk-cascade-card::before {{
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(340px circle at var(--spot-x) var(--spot-y), color-mix(in srgb, var(--stage-color) 22%, transparent), transparent 68%);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .35s ease;
+        z-index: 0;
+    }}
+    .ipk-cascade-card::after {{
+        content: "";
+        position: absolute;
+        width: 26px;
+        height: 26px;
+        right: 11px;
+        top: 11px;
+        border-top: 1px solid rgba(242,238,226,.28);
+        border-right: 1px solid rgba(242,238,226,.28);
+        opacity: .60;
+        pointer-events: none;
+        z-index: 1;
+    }}
+    .ipk-cascade-card:hover {{
+        border-color: color-mix(in srgb, var(--stage-color) 74%, rgba(242,238,226,.20));
+        box-shadow: 0 34px 84px -50px rgba(0,0,0,.92);
+        transform: translateY(-4px) rotateX(1.5deg);
+    }}
+    .ipk-cascade-card:hover::before {{
+        opacity: 1;
+    }}
+    .ipk-cascade-card > * {{
+        position: relative;
+        z-index: 1;
+    }}
+    .ipk-cascade-step {{
+        color: var(--stage-color);
+        font-family: var(--sans);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.13em;
+        margin-bottom: 0.52rem;
+        text-transform: uppercase;
+    }}
+    .ipk-cascade-card h3 {{
+        color: var(--inverse);
+        font-size: clamp(1.3rem, 1.9vw, 1.8rem);
+        line-height: 1.02;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }}
+    .ipk-cascade-lock {{
+        color: rgba(242,238,226,.80) !important;
+        font-family: var(--sans) !important;
+        font-size: 0.9rem;
+        margin: 0.28rem 0 0.7rem !important;
+    }}
+    .ipk-cascade-branch {{
+        border: 1px solid color-mix(in srgb, var(--stage-color) 45%, rgba(242,238,226,.12));
+        border-radius: 999px;
+        color: rgba(242,238,226,.78);
+        display: inline-flex;
+        font-family: var(--sans);
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.9rem;
+        max-width: 100%;
+        padding: 0.18rem 0.48rem;
+        text-transform: uppercase;
+    }}
+    .ipk-cascade-card dl {{
+        display: grid;
+        gap: 0.35rem;
+        margin: 0;
+    }}
+    .ipk-cascade-card dt {{
+        color: var(--stage-color);
+        font-family: var(--sans);
+        font-size: 0.66rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }}
+    .ipk-cascade-card dd {{
+        color: rgba(242,238,226,.78);
+        font-family: var(--serif-body);
+        font-size: 0.92rem;
+        line-height: 1.35;
+        margin: 0 0 0.35rem;
+    }}
+    .ipk-cascade-arrow {{
+        background: linear-gradient(90deg, var(--stage-color), rgba(190,230,237,.65));
+        height: 2px;
+        position: absolute;
+        right: -1rem;
+        top: 50%;
+        width: 1rem;
+        z-index: 2;
+        transform-origin: left center;
+    }}
+    .ipk-lock-cascade.in .ipk-cascade-arrow {{
+        animation: ipk-cascade-arrow-in .7s var(--ease-soft-out) .18s both;
+    }}
+    @keyframes ipk-cascade-arrow-in {{
+        from {{ opacity: 0; transform: scaleX(0); }}
+        to {{ opacity: 1; transform: scaleX(1); }}
+    }}
+    .ipk-cascade-arrow::after {{
+        border-bottom: 5px solid transparent;
+        border-left: 7px solid rgba(190,230,237,.78);
+        border-top: 5px solid transparent;
+        content: "";
+        position: absolute;
+        right: -1px;
+        top: 50%;
+        transform: translateY(-50%);
     }}
     .ipk-monograph-shell,
     .output.block:has(.ipk-monograph-shell-marker) > div,
@@ -5363,7 +5676,7 @@ def _(locks_table):
 
 @app.cell
 def _():
-    _flowchart = mo.as_html(create_dependency_flowchart())
+    _flowchart = create_dependency_flowchart()
     _section = mo.vstack([
         mo.Html('<a id="flow"></a>'),
         section_header(

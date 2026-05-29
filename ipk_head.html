@@ -136,9 +136,33 @@
     const finePointer = window.matchMedia &&
       window.matchMedia("(pointer: fine)").matches;
 
+    function scrollHost() {
+      const app = q("#App");
+      if (app && app.scrollHeight > app.clientHeight + 10) return app;
+      return window;
+    }
+
+    function scrollTop() {
+      const host = scrollHost();
+      return host === window ? window.scrollY : host.scrollTop;
+    }
+
+    function updateReadProgress() {
+      const bar = q("#read-progress");
+      const host = scrollHost();
+      if (!bar) return;
+      const top = scrollTop();
+      const max = host === window
+        ? Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+        : Math.max(1, host.scrollHeight - host.clientHeight);
+      bar.style.transform = "scaleX(" + clamp(top / max, 0, 1).toFixed(4) + ")";
+    }
+
     function updateNavState() {
       const nav = q(".ipk-nav");
-      if (nav) nav.classList.toggle("is-pinned", window.scrollY > 12);
+      const top = scrollTop();
+      if (nav) nav.classList.toggle("is-pinned", top > 12);
+      updateReadProgress();
 
       const links = qa(".ipk-nav-links a[href^='#']");
       if (!links.length) return;
@@ -147,16 +171,69 @@
       for (const link of links) {
         const target = q(link.getAttribute("href"));
         if (!target) continue;
-        const y = target.getBoundingClientRect().top + window.scrollY;
-        if (y - 150 <= window.scrollY) active = link;
+        const y = target.getBoundingClientRect().top + top;
+        if (y - 150 <= top) active = link;
       }
       links.forEach((link) => link.classList.toggle("is-active", link === active));
     }
 
     window.addEventListener("scroll", updateNavState, { passive: true });
+    const appScrollHost = q("#App");
+    if (appScrollHost) appScrollHost.addEventListener("scroll", updateNavState, { passive: true });
     window.addEventListener("resize", updateNavState, { passive: true });
     window.setTimeout(updateNavState, 60);
     window.setTimeout(updateNavState, 600);
+
+    const revealSelector = [
+      ".reveal",
+      ".reveal-stagger",
+      ".ipk-reveal-left",
+      ".ipk-reveal-scale",
+      ".ipk-lock-cascade",
+      ".ipk-law-panel",
+      ".ipk-formula-card",
+      ".ipk-kill-card",
+      ".ipk-monograph-tile",
+      ".ipk-mu-card",
+      ".ipk-lock-detail",
+      ".ipk-observatory-tile",
+      ".ipk-advanced-note",
+      ".ipk-why",
+    ].join(",");
+
+    function installScrollReveals() {
+      const revealEls = qa(revealSelector).filter((el) => !el.dataset.ipkRevealBound);
+      if (!revealEls.length) return;
+      revealEls.forEach((el) => {
+        el.dataset.ipkRevealBound = "true";
+        el.classList.add("reveal");
+        if (reduceMotion) el.classList.add("in");
+      });
+      if (reduceMotion || !("IntersectionObserver" in window)) {
+        revealEls.forEach((el) => el.classList.add("in"));
+        return;
+      }
+      const observer = window.__ipkRevealObserver || new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("in");
+          observer.unobserve(entry.target);
+        });
+      }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+      window.__ipkRevealObserver = observer;
+      revealEls.forEach((el) => observer.observe(el));
+    }
+
+    installScrollReveals();
+    window.setTimeout(installScrollReveals, 500);
+    window.setTimeout(installScrollReveals, 1800);
+    if (!window.__ipkRevealMutationObserver) {
+      window.__ipkRevealMutationObserver = new MutationObserver(() => installScrollReveals());
+      window.__ipkRevealMutationObserver.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    }
 
     document.addEventListener("click", (event) => {
       if (
@@ -203,7 +280,7 @@
     document.addEventListener("mousemove", (event) => {
       if (reduceMotion || !finePointer) return;
       const card = event.target.closest &&
-        event.target.closest(".ipk-monograph-tile, .ipk-formula-card, .ipk-kill-card");
+        event.target.closest(".ipk-monograph-tile, .ipk-formula-card, .ipk-kill-card, .ipk-cascade-card");
       if (!card) return;
       if (card !== tiltCard) {
         tiltCard = card;
@@ -215,7 +292,7 @@
 
     document.addEventListener("mouseout", (event) => {
       const card = event.target.closest &&
-        event.target.closest(".ipk-monograph-tile, .ipk-formula-card, .ipk-kill-card");
+        event.target.closest(".ipk-monograph-tile, .ipk-formula-card, .ipk-kill-card, .ipk-cascade-card");
       if (!card) return;
       if (event.relatedTarget && card.contains(event.relatedTarget)) return;
       card.style.transform = "";
