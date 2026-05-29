@@ -181,6 +181,60 @@
     });
   }
 
+  function installShadowPolish() {
+    qa("marimo-tabs").forEach((tabs) => {
+      const root = tabs.shadowRoot;
+      if (!root || root.getElementById("ipk-shadow-polish")) return;
+      const style = document.createElement("style");
+      style.id = "ipk-shadow-polish";
+      style.textContent = `
+        :host { color-scheme: dark; }
+        [role="tablist"] {
+          max-width: 100%;
+          overflow-x: auto;
+          scrollbar-width: none;
+          border: 1px solid rgba(242, 238, 226, .14) !important;
+          border-radius: 999px !important;
+          background: rgba(7, 20, 38, .68) !important;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 48px -38px rgba(0,0,0,.9);
+          backdrop-filter: blur(18px) saturate(1.35);
+          -webkit-backdrop-filter: blur(18px) saturate(1.35);
+        }
+        [role="tablist"]::-webkit-scrollbar { display: none; }
+        [role="tab"] {
+          border-radius: 999px !important;
+          color: rgba(242, 238, 226, .68) !important;
+          transition: background 220ms cubic-bezier(.2,.7,.2,1), color 220ms cubic-bezier(.2,.7,.2,1), transform 220ms cubic-bezier(.2,.7,.2,1), box-shadow 220ms cubic-bezier(.2,.7,.2,1) !important;
+        }
+        [role="tab"]:hover {
+          color: #f2eee2 !important;
+          transform: translateY(-1px);
+        }
+        [role="tab"][aria-selected="true"],
+        [role="tab"][data-state="active"] {
+          color: #f2eee2 !important;
+          background: linear-gradient(135deg, rgba(103,232,249,.16), rgba(252,211,77,.14)) !important;
+          box-shadow: 0 10px 30px -22px rgba(103,232,249,.7), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        }
+        [role="tabpanel"] {
+          margin-top: .9rem !important;
+          outline: none !important;
+        }
+      `;
+      root.appendChild(style);
+    });
+
+    qa("marimo-table").forEach((table) => {
+      table.style.setProperty("color-scheme", "dark");
+      table.style.setProperty("--gdg-bg-cell", "rgba(7,20,38,.96)");
+      table.style.setProperty("--gdg-bg-cell-medium", "rgba(11,29,51,.98)");
+      table.style.setProperty("--gdg-bg-header", "rgba(242,238,226,.12)");
+      table.style.setProperty("--gdg-text-dark", "#f2eee2");
+      table.style.setProperty("--gdg-text-medium", "rgba(242,238,226,.78)");
+      table.style.setProperty("--gdg-border-color", "rgba(242,238,226,.18)");
+    });
+  }
+
   function installIIMotion() {
     scheduleStaticChromeCleanup();
     if (window.__ipkIIMotionInstalled) return;
@@ -284,10 +338,16 @@
     }
 
     installScrollReveals();
+    installShadowPolish();
     window.setTimeout(installScrollReveals, 500);
     window.setTimeout(installScrollReveals, 1800);
+    window.setTimeout(installShadowPolish, 500);
+    window.setTimeout(installShadowPolish, 1800);
     if (!window.__ipkRevealMutationObserver) {
-      window.__ipkRevealMutationObserver = new MutationObserver(() => installScrollReveals());
+      window.__ipkRevealMutationObserver = new MutationObserver(() => {
+        installScrollReveals();
+        installShadowPolish();
+      });
       window.__ipkRevealMutationObserver.observe(document.documentElement, {
         childList: true,
         subtree: true,

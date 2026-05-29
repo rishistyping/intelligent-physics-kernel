@@ -4172,8 +4172,8 @@ def _():
         position: relative;
         overflow: hidden;
         text-align: center;
-        min-height: calc(100svh - 66px);
-        padding: 4.5rem clamp(1rem, 4vw, 4rem) 3.4rem;
+        min-height: clamp(500px, 68svh, 720px);
+        padding: clamp(3.2rem, 7vh, 4.35rem) clamp(1rem, 4vw, 4rem) clamp(2rem, 4.5vh, 3rem);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -4316,6 +4316,33 @@ def _():
         text-transform: uppercase;
         letter-spacing: 0.9px;
     }}
+    .ipk-scroll-cue {{
+        width: 1px;
+        height: 42px;
+        margin: clamp(0.9rem, 2.4vh, 1.45rem) auto 0;
+        background: linear-gradient(180deg, transparent, rgba(201,169,110,.74), transparent);
+        opacity: 0.72;
+        position: relative;
+    }}
+    .ipk-scroll-cue::after {{
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 2px;
+        width: 5px;
+        height: 5px;
+        border-radius: 999px;
+        background: var(--gold);
+        box-shadow: 0 0 20px rgba(201,169,110,.48);
+        transform: translateX(-50%);
+        animation: ipk-scroll-cue-drop 1.9s var(--ii-ease) infinite;
+    }}
+    @keyframes ipk-scroll-cue-drop {{
+        0% {{ opacity: 0; transform: translate(-50%, 0); }}
+        28% {{ opacity: 1; }}
+        72% {{ opacity: 0.9; }}
+        100% {{ opacity: 0; transform: translate(-50%, 34px); }}
+    }}
     .ipk-mu-card {{
         background:
             radial-gradient(circle at 12% 14%, rgba(47,149,166,.13), transparent 17rem),
@@ -4325,7 +4352,8 @@ def _():
         color: var(--secondary);
         padding: 1.35rem;
         box-shadow: 0 18px 48px rgba(15,35,63,0.10);
-        width: min(1400px, calc(100vw - 2rem));
+        width: min(1400px, 100%);
+        max-width: calc(100vw - 2rem);
         margin: 0 auto;
         position: relative;
         transition: transform 350ms var(--ii-ease), box-shadow 350ms var(--ii-ease);
@@ -5229,6 +5257,16 @@ def _():
             min-height: auto;
             padding: clamp(3.5rem, 12vw, 5rem) 1rem clamp(2rem, 8vw, 3rem);
         }}
+        .ipk-scroll-cue {{
+            height: 28px;
+            margin-top: 0.85rem;
+        }}
+        @keyframes ipk-scroll-cue-drop {{
+            0% {{ opacity: 0; transform: translate(-50%, 0); }}
+            28% {{ opacity: 1; }}
+            72% {{ opacity: 0.9; }}
+            100% {{ opacity: 0; transform: translate(-50%, 22px); }}
+        }}
         .ipk-hero-stats,
         .ipk-mu-grid,
         .ipk-observatory-strip,
@@ -5504,6 +5542,21 @@ def _():
         border-color: rgba(242,238,226,.16) !important;
         box-shadow: 0 24px 70px -54px rgba(0,0,0,.88) !important;
     }}
+    .ipk-mu-card,
+    .ipk-lock-detail,
+    .ipk-advanced-note,
+    .ipk-law-panel,
+    .ipk-copy-sheet,
+    .ipk-why {{
+        max-width: 100% !important;
+        overflow-wrap: anywhere;
+    }}
+    .ipk-mu-card {{
+        width: min(1400px, 100%) !important;
+    }}
+    .ipk-why {{
+        width: min(1500px, 100%) !important;
+    }}
     .ipk-marquee-strip,
     .ipk-footer {{
         background: rgba(7,20,38,.72) !important;
@@ -5688,6 +5741,29 @@ def _():
     }}
     .modebar {{
         background: rgba(7,20,38,.80) !important;
+        border-radius: 8px;
+    }}
+    .ipk-cascade-track,
+    .ipk-nav-links {{
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scroll-padding-inline: 0.5rem;
+    }}
+    .ipk-cascade-track {{
+        mask-image: linear-gradient(90deg, transparent 0, #000 1.1rem, #000 calc(100% - 1.1rem), transparent 100%);
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1.1rem, #000 calc(100% - 1.1rem), transparent 100%);
+    }}
+    .ipk-lock-cascade {{
+        max-width: 100%;
+        contain: paint;
+    }}
+    .ipk-nav {{
+        backdrop-filter: blur(20px) saturate(1.35);
+        -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    }}
+    :focus-visible {{
+        outline: 2px solid rgba(103,232,249,.74) !important;
+        outline-offset: 3px !important;
         border-radius: 8px;
     }}
     .ipk-copy-sheet {{
@@ -5893,6 +5969,7 @@ def _(law_formula_input):
             <div class="ipk-hero-stat"><strong>16 Weights</strong><span>Spin(10) matter</span></div>
             <div class="ipk-hero-stat"><strong>3 + 2 + 1</strong><span>SM algebra</span></div>
         </div>
+        <div class="ipk-scroll-cue" aria-hidden="true"></div>
     </div>
     """)
 
