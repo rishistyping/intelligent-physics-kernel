@@ -24,6 +24,7 @@ with app.setup:
     import marimo as mo
     import numpy as np
     import plotly.graph_objects as go
+    import plotly.io as pio
     import networkx as nx
     import pandas as pd
     import re
@@ -46,6 +47,7 @@ with app.setup:
     MUTED = "#94a3b8"
     ELIMINATED_RED = "#f87171"
     SURVIVES_GREEN = "#4ade80"
+    pio.templates.default = "plotly_dark"
 
     # =============================================================================
     # AUTHORITATIVE CONTENT EXTRACTED FROM THE PDF (sole source of truth)
@@ -5424,6 +5426,276 @@ def _():
     }}
     .ipk-footer span {{
         opacity: 0.6;
+    }}
+    /* Dark-surface hardening for static Pages export and Marimo UI chrome. */
+    html,
+    body {{
+        color-scheme: dark;
+        background:
+            radial-gradient(circle at 78% 0%, rgba(103, 232, 249, 0.18), transparent 34rem),
+            radial-gradient(circle at 7% 46%, rgba(252, 211, 77, 0.10), transparent 30rem),
+            linear-gradient(180deg, #071426 0%, #0a1628 52%, #071426 100%) !important;
+        color: var(--inverse) !important;
+    }}
+    #root,
+    #App,
+    #App.bg-background,
+    main,
+    .marimo,
+    .marimo-app,
+    .mo-notebook,
+    .notebook,
+    [data-testid="notebook"],
+    [data-testid="notebook-content"],
+    [data-testid="cell-output"],
+    .cell-output,
+    .output-area,
+    .output.block,
+    marimo-output,
+    .contents {{
+        background: transparent !important;
+        color: rgba(242,238,226,.86) !important;
+    }}
+    .markdown,
+    .prose,
+    .prose :where(p, li, strong, em, span, h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {{
+        color: inherit !important;
+    }}
+    .ipk-nav,
+    .ipk-nav.is-pinned {{
+        background:
+            linear-gradient(180deg, rgba(8, 22, 40, .94), rgba(8, 22, 40, .78)) !important;
+        border-color: rgba(242,238,226,.14) !important;
+        box-shadow: 0 18px 55px -40px rgba(0,0,0,.9) !important;
+    }}
+    .ipk-brand-mark {{
+        background: linear-gradient(135deg, rgba(103,232,249,.20), rgba(252,211,77,.18)) !important;
+        color: var(--inverse) !important;
+        border-color: rgba(242,238,226,.22) !important;
+    }}
+    .ipk-nav-title,
+    .ipk-nav-links a,
+    .ipk-nav-title-row:hover .ipk-nav-title {{
+        color: var(--inverse) !important;
+    }}
+    .ipk-nav-meta,
+    .ipk-marquee-track span {{
+        color: rgba(242,238,226,.62) !important;
+    }}
+    .ipk-nav-links a:hover,
+    .ipk-nav-links a.is-active {{
+        color: var(--gold) !important;
+    }}
+    .ipk-law-badge,
+    .ipk-hero-chain span,
+    .ipk-hero-stat,
+    .ipk-mu-chip,
+    .ipk-observatory-tile,
+    .ipk-mu-card,
+    .ipk-lock-detail,
+    .ipk-advanced-note,
+    .ipk-copy-sheet,
+    marimo-callout-output,
+    .mo-callout {{
+        background:
+            radial-gradient(circle at var(--spot-x, 50%) var(--spot-y, 0%), rgba(103,232,249,.10), transparent 18rem),
+            linear-gradient(135deg, rgba(14, 31, 54, .92), rgba(7, 20, 38, .84)) !important;
+        color: rgba(242,238,226,.86) !important;
+        border-color: rgba(242,238,226,.16) !important;
+        box-shadow: 0 24px 70px -54px rgba(0,0,0,.88) !important;
+    }}
+    .ipk-marquee-strip,
+    .ipk-footer {{
+        background: rgba(7,20,38,.72) !important;
+        border-color: rgba(242,238,226,.14) !important;
+        color: rgba(242,238,226,.68) !important;
+    }}
+    .ipk-hero {{
+        background:
+            radial-gradient(circle at 72% 16%, rgba(103,232,249,.20), transparent 30rem),
+            radial-gradient(circle at 16% 70%, rgba(252,211,77,.13), transparent 27rem),
+            linear-gradient(135deg, rgba(7,20,38,.98), rgba(12,31,56,.94) 52%, rgba(7,20,38,.98)) !important;
+        border-bottom-color: rgba(242,238,226,.12) !important;
+        color: var(--inverse) !important;
+    }}
+    .ipk-hero h1,
+    .ipk-hero strong,
+    .ipk-section-header h2,
+    .ipk-mu-card h3,
+    .ipk-mu-principle,
+    .ipk-mu-zero,
+    .ipk-lock-title,
+    .ipk-observatory-tile strong,
+    .ipk-copy-sheet summary strong {{
+        color: var(--inverse) !important;
+    }}
+    .ipk-hero p,
+    .ipk-section-subtitle,
+    .ipk-lock-meta,
+    .ipk-lock-details,
+    .ipk-lock-quote,
+    .ipk-lock-eliminated,
+    .ipk-mu-title span,
+    .ipk-mu-chip span,
+    .ipk-footer,
+    .ipk-copy-sheet summary small {{
+        color: rgba(242,238,226,.70) !important;
+    }}
+    .ipk-mu-kicker {{
+        color: var(--gold) !important;
+    }}
+    .ipk-section-header {{
+        border-bottom-color: rgba(242,238,226,.14) !important;
+    }}
+    .ipk-section-header::after {{
+        background: linear-gradient(90deg, var(--accent), var(--gold)) !important;
+    }}
+    .ipk-lock-pill,
+    .ipk-mu-chip {{
+        background: rgba(103,232,249,.10) !important;
+        color: var(--sky) !important;
+        border-color: rgba(103,232,249,.22) !important;
+    }}
+    .ipk-lock-quote,
+    .ipk-law-explain,
+    .ipk-paper-quote,
+    .ipk-pledge {{
+        background: rgba(242,238,226,.065) !important;
+        border-color: rgba(252,211,77,.50) !important;
+    }}
+    .ipk-why {{
+        background:
+            radial-gradient(circle at 82% 12%, rgba(103,232,249,.18), transparent 25rem),
+            linear-gradient(135deg, rgba(7,20,38,.98), rgba(13,37,66,.92)) !important;
+        box-shadow: 0 28px 80px -44px rgba(0,0,0,.88) !important;
+    }}
+    input,
+    textarea,
+    select,
+    button,
+    marimo-text,
+    marimo-select,
+    marimo-dropdown,
+    marimo-multiselect,
+    marimo-slider {{
+        color-scheme: dark;
+    }}
+    input,
+    textarea,
+    select {{
+        background: rgba(7,20,38,.88) !important;
+        color: var(--inverse) !important;
+        border-color: rgba(242,238,226,.24) !important;
+        accent-color: var(--accent);
+    }}
+    button,
+    .mo-button,
+    marimo-button,
+    marimo-download {{
+        background: rgba(242,238,226,.08) !important;
+        color: var(--inverse) !important;
+        border-color: rgba(242,238,226,.22) !important;
+    }}
+    button:hover,
+    .mo-button:hover,
+    marimo-button:hover,
+    marimo-download:hover {{
+        background: rgba(103,232,249,.14) !important;
+        border-color: rgba(103,232,249,.34) !important;
+    }}
+    marimo-text,
+    marimo-select,
+    marimo-dropdown,
+    marimo-multiselect,
+    marimo-slider,
+    marimo-checkbox {{
+        color: var(--inverse) !important;
+    }}
+    marimo-text::part(label),
+    marimo-select::part(label),
+    marimo-dropdown::part(label),
+    marimo-multiselect::part(label),
+    marimo-slider::part(label),
+    marimo-checkbox::part(label) {{
+        color: rgba(242,238,226,.78) !important;
+    }}
+    marimo-text::part(input),
+    marimo-select::part(trigger),
+    marimo-dropdown::part(trigger),
+    marimo-multiselect::part(trigger),
+    marimo-slider::part(track),
+    marimo-slider::part(thumb) {{
+        background: rgba(7,20,38,.88) !important;
+        color: var(--inverse) !important;
+        border-color: rgba(242,238,226,.24) !important;
+    }}
+    marimo-callout-output,
+    marimo-callout-output::part(container),
+    .mo-callout,
+    [data-testid="stacks-plain-text"],
+    pre {{
+        background: rgba(7,20,38,.72) !important;
+        color: rgba(242,238,226,.86) !important;
+        border-color: rgba(242,238,226,.18) !important;
+    }}
+    code {{
+        color: var(--sky) !important;
+    }}
+    marimo-static-notebook-banner,
+    [class*="static-notebook" i],
+    [class*="notebook-banner" i],
+    [data-testid*="static" i],
+    [data-testid*="banner" i] {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+    marimo-table {{
+        color-scheme: dark;
+        color: var(--inverse) !important;
+        --gdg-bg-cell: rgba(7, 20, 38, 0.96);
+        --gdg-bg-cell-medium: rgba(11, 29, 51, 0.98);
+        --gdg-bg-header: rgba(242, 238, 226, 0.12);
+        --gdg-bg-header-has-focus: rgba(103, 232, 249, 0.18);
+        --gdg-bg-bubble: rgba(7, 20, 38, 0.96);
+        --gdg-text-dark: var(--inverse);
+        --gdg-text-medium: rgba(242, 238, 226, 0.78);
+        --gdg-text-light: rgba(242, 238, 226, 0.60);
+        --gdg-text-group-header: var(--sky);
+        --gdg-border-color: rgba(242, 238, 226, 0.18);
+        --gdg-accent-color: var(--sky);
+        --gdg-accent-light: rgba(103, 232, 249, 0.18);
+        --gdg-link-color: var(--sky);
+        --gdg-font-family: var(--sans);
+    }}
+    marimo-table::part(table-wrapper),
+    marimo-table::part(table-tabs),
+    marimo-table::part(table-footer),
+    marimo-table::part(filter-pills) {{
+        background: rgba(7, 20, 38, 0.94) !important;
+        color: var(--inverse) !important;
+        border-color: rgba(242,238,226,.18) !important;
+    }}
+    marimo-table :is(table, thead, tbody, tr, th, td, [role="grid"], [role="row"], [role="columnheader"], [role="gridcell"]) {{
+        background: rgba(7,20,38,.96) !important;
+        color: var(--inverse) !important;
+        border-color: rgba(242,238,226,.14) !important;
+    }}
+    .js-plotly-plot,
+    .plotly-graph-div,
+    .svg-container,
+    .main-svg {{
+        background: transparent !important;
+    }}
+    .modebar {{
+        background: rgba(7,20,38,.80) !important;
+        border-radius: 8px;
+    }}
+    .ipk-copy-sheet {{
+        max-width: min(1100px, 100%) !important;
+        margin-right: auto !important;
+    }}
+    .ipk-copy-sheet pre {{
+        max-height: min(22rem, 48vh) !important;
     }}
     .js-plotly-plot,
     .plotly-graph-div {{

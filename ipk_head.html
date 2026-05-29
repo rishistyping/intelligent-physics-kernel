@@ -1,3 +1,50 @@
+<style>
+  :root {
+    color-scheme: dark;
+    --ipk-critical-bg: #071426;
+    --ipk-critical-ink: #f2eee2;
+  }
+  html,
+  body,
+  #root,
+  #App,
+  main,
+  .marimo,
+  .marimo-app,
+  .mo-notebook,
+  .notebook,
+  [data-testid="notebook"],
+  [data-testid="notebook-content"],
+  [data-testid="cell-output"],
+  .cell-output,
+  .output-area,
+  .output.block,
+  marimo-output {
+    background: var(--ipk-critical-bg) !important;
+    color: var(--ipk-critical-ink) !important;
+  }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at 78% 0%, rgba(103, 232, 249, 0.18), transparent 34rem),
+      radial-gradient(circle at 10% 55%, rgba(252, 211, 77, 0.10), transparent 30rem),
+      linear-gradient(180deg, #071426 0%, #0a1628 52%, #071426 100%) !important;
+  }
+  marimo-static-notebook-banner,
+  [class*="static-notebook" i],
+  [class*="notebook-banner" i],
+  [data-testid*="static" i],
+  [data-testid*="banner" i] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  marimo-callout-output,
+  .mo-callout,
+  pre,
+  code {
+    color-scheme: dark;
+  }
+</style>
 <script>
 (() => {
   if (window.__ipkIIMotionBootstrap) return;
@@ -9,6 +56,11 @@
   const staticChromePhrases = [
     "static notebook",
     "not connected to a kernel",
+    "requires a kernel",
+    "kernel unavailable",
+    "python is not running",
+    "connection lost",
+    "reconnect",
     "made with marimo",
   ];
 
@@ -40,12 +92,13 @@
   function looksLikeStaticChrome(el) {
     if (!el || el.nodeType !== 1 || (el.dataset && el.dataset.ipkKeep)) return false;
     if (el.dataset && el.dataset.ipkStaticChromeHidden) return false;
-    if (protectedChromeNode(el)) return false;
+    const isProtected = protectedChromeNode(el);
     const text = compactText(el).toLowerCase();
     if (!text) return false;
     const matched = staticChromePhrases.some((phrase) => text.includes(phrase));
     if (!matched) return false;
     if (text.includes("made with marimo")) return text.length <= 90;
+    if (isProtected) return text.length <= 360;
     return text.length <= 360;
   }
 
@@ -83,8 +136,14 @@
       "[role='status']",
       "[data-testid*='static' i]",
       "[data-testid*='banner' i]",
+      "[data-testid*='kernel' i]",
+      "[data-testid*='offline' i]",
+      "[data-testid*='connection' i]",
       "[class*='static-notebook' i]",
       "[class*='notebook-banner' i]",
+      "[class*='kernel' i]",
+      "[class*='offline' i]",
+      "[class*='connection' i]",
       "[class*='toast' i]",
       "[class*='badge' i]",
       "[class*='fixed' i][class*='bottom-0' i]",
@@ -100,7 +159,7 @@
     qa(selectors).forEach((el) => {
       if (!looksLikeStaticChrome(el)) return;
       const box = removableChromeBox(el);
-      if (box && box.parentElement && !protectedChromeNode(box)) {
+      if (box && box.parentElement && (!protectedChromeNode(box) || looksLikeStaticChrome(box))) {
         box.dataset.ipkStaticChromeHidden = "true";
         box.setAttribute("aria-hidden", "true");
         box.style.setProperty("display", "none", "important");
